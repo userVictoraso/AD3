@@ -6,17 +6,16 @@ import java.io.InputStreamReader;
 import java.net.*;
 import java.util.Scanner;
 
-public class Emisor implements Runnable {
+public class Emisor extends Thread {
 
-    static Thread t;
-    DatagramPacket envio = null;
-    DatagramPacket envioDos = null;
-    Scanner scanner = new Scanner(System.in);
-    String nuevaFrase = "";
-    int puerto = 4444; // puerto por el que escucha
+    static DatagramPacket envio = null;
+    static DatagramPacket envioDos = null;
+    static Scanner scanner = new Scanner(System.in);
+    static String nuevaFrase = "";
+    static int puerto = 4444; // puerto por el que escucha
 
     public static void main(String[] args) {
-
+        new Emisor().run();
     }
 
     @Override
@@ -58,4 +57,5 @@ public class Emisor implements Runnable {
         }
         System.out.println("Hilo acabado");
     }
+
 }
