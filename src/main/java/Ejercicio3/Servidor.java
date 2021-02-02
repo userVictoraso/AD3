@@ -9,7 +9,7 @@ import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Receptor {
+public class Servidor {
     static List<Frase> frases = new ArrayList<>();
     static Respuesta respuesta = new Respuesta(true, null);
 
