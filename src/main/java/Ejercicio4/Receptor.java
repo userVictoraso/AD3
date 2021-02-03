@@ -12,6 +12,7 @@ import java.util.Random;
 
 public class Receptor {
     static final int PORT_NUM = 9876;
+
     static DatagramPacket paqRecibido = null;
     static DatagramPacket paqEnviado = null;
 
