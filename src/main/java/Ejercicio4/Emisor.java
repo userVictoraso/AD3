@@ -1,48 +1,44 @@
 package Ejercicio4;
 
 import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.InputStreamReader;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.Scanner;
 
 public class Emisor {
-
-    static DatagramPacket envio = null;
-
     static final int PORT_NUM = 9876;
-
-    static  byte[] enviados;
-    static byte[] recibidos = new byte[1024];
-    static String nuevaFrase = "";
+    static DataInputStream flujo_entrada;
+    static DataOutputStream flujo_salida;
 
     public static void main(String args[]) throws Exception {
         // FLUJO PARA ENTRADA ESTANDAR
-        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
         Scanner scanner = new Scanner(System.in);
-        DatagramSocket clientSocket = new DatagramSocket();//socket cliente
+        Socket skCliente = new Socket("localhost", PORT_NUM);
 
-        // DATOS DEL SERVIDOR
-        InetAddress IPServidor = InetAddress.getLocalHost();// localhost
-        int puerto = 9876; // puerto por el que escucha
+        flujo_entrada = new DataInputStream(skCliente.getInputStream());
+        flujo_salida = new DataOutputStream(skCliente.getOutputStream());
 
-        // INTRODUCIR NUMERO
-        System.out.println("Introduce tu combinación: ");
-        String cadena = scanner.nextLine();
-        enviados = cadena.getBytes();
+        while (true){
+            // INTRODUCIR NUMERO
+            System.out.println("Introduce tu combinación: ");
+            String cadena = scanner.nextLine();
+            flujo_salida.writeUTF(cadena);
 
-        //ENVIANDO DATAGRAMA AL SERVIDOR
-        envio = new DatagramPacket(enviados, enviados.length, IPServidor, puerto);
-        clientSocket.send(envio);
+            //PARA SALIR
+            if (cadena.trim().equals("*")) break;
 
-        // RECIBIENDO DATAGRAMÄ DEL SERVIDOR
-        DatagramPacket recibo = new DatagramPacket(recibidos, recibidos.length);
-        clientSocket.receive(recibo);
-        String respuesta = new String(recibo.getData(), recibo.getOffset(), recibo.getLength());
+            // RECIBIENDO DATAGRAMÄ DEL SERVIDOR
+            String respuesta = flujo_entrada.readUTF();
+            System.out.println("El resultado es: " + respuesta);
 
-        clientSocket.close();
+        }
+
     }
 }

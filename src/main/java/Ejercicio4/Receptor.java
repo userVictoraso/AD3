@@ -3,89 +3,95 @@ package Ejercicio4;
 import Ejercicio2.Frase;
 import Ejercicio2.Respuesta;
 
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.net.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-public class Receptor {
+public class Receptor extends Thread {
     static final int PORT_NUM = 9876;
+    static final int NUM_VIDAS = 10;
+    Socket sCliente;
 
-    static DatagramPacket paqRecibido = null;
-    static DatagramPacket paqEnviado = null;
+    static Random randomGenerator = new Random();
 
     static ArrayList<Integer> winCombination = new ArrayList<Integer>();
     static ArrayList<Integer> clientCombination = new ArrayList<Integer>();
 
-    static byte[] recibidos = new byte[1024];
-    static byte[] enviados = new byte[1024];
-
     static String combinacionCliente;
+    static String respuesta;
+
+    public Receptor(Socket sCliente) {
+        this.sCliente = sCliente;
+    }
 
     public static void main(String args[]) throws Exception {
         //GENERAR NUMERO RANDOM SIN REPETIR
-        Random randomGenerator = new Random();
         while (winCombination.size() < 4) {
-
             int random = randomGenerator.nextInt(10);
             if (!winCombination.contains(random)) {
                 winCombination.add(random);
-                System.out.println(random);
+                System.out.print(random);
             }
         }
-
-        DatagramSocket serverSocket = new DatagramSocket(PORT_NUM);
+        //SE INICIA EL SERVIDOR
+        ServerSocket skServidor = new ServerSocket(PORT_NUM);
 
         while (true) {
-            System.out.println("Esperando combinación de algún cliente");
-            //RECIBO DATAGRAMA
-            paqRecibido = new DatagramPacket(recibidos, recibidos.length);
-            serverSocket.receive(paqRecibido);
-            combinacionCliente = new String(paqRecibido.getData(), paqRecibido.getOffset(), paqRecibido.getLength());
-
-            //DIRECCION ORIGEN/ASOCIAR COMBINACION CON CLIENTE, CARGAR HILO
-            InetAddress IPOrigen = paqRecibido.getAddress();
-            int puerto = paqRecibido.getPort();
-            System.out.println("Cliente " + 1 + ": [IP ->" + IPOrigen.toString() + "]"); //CAMBIAR EL CODIGO DEL CLIENTE
-            System.out.println("\tCombinacion del cliente: " + combinacionCliente);
-
-            //PASAR DE STRING A ARRAYLIST
-            stringToArraylist(combinacionCliente);
-
-            //COMPROBAR
-            String respuesta = "";
-            for (int i = 0; i < winCombination.size(); i++) {
-                for (int j = 0; j < winCombination.size(); j++) {
-                    if (winCombination.get(i) == clientCombination.get(i)) {
-                        //IMPRIMIR COINCIDEN EN POSICION
-                        respuesta += "";
-                        break;
-                    } else if (winCombination.get(i) == clientCombination.get(j)) {
-                        //IMPRIMIR ▒
-                        respuesta += "";
-                        break;
-                    }
-                }
-            }
-
-            enviados = respuesta.getBytes();
-            paqEnviado = new DatagramPacket(enviados, enviados.length, IPOrigen, puerto);
-            serverSocket.send(paqEnviado);
-            System.out.println("\tRespuesta enviada al cliente " + 1 + ": " + respuesta);//CAMBIAR CODIGO DEL CLIENTE
-
-            //Para terminar
-            if (combinacionCliente.trim().equals("*")) break;
-        }//Fin de while
-        serverSocket.close();
-        System.out.println("Socket cerrado...");
-
+            //ESPERAMOS A LA CONEXION DEL CLIENTE
+            Socket socketCliente = skServidor.accept();
+            System.out.println();
+            System.out.println("Cliente conectado [IP: " + socketCliente.getInetAddress() + ", PUERTO " + PORT_NUM + "]");
+            //SE INICIA EL HILO
+            new Receptor(socketCliente).start();
+        }
     }//Fin de main
 
+    @Override
+    public void run() {
+        try {
+            //SE INICIAN LOS FLUJOS DE E/S
+            DataInputStream flujo_entrada = new DataInputStream(sCliente.getInputStream());
+            DataOutputStream flujo_salida = new DataOutputStream(sCliente.getOutputStream());
+
+            //AÑADIR AL ARRAYLIST DEL CLIENTE
+            while(true){
+                System.out.print("Esperando combinación del cliente: ");
+                combinacionCliente = flujo_entrada.readUTF();
+                System.out.println(combinacionCliente);
+                stringToArraylist(combinacionCliente);
+
+                //COMPROBAR
+                respuesta = "";
+                for (int i = 0; i < winCombination.size(); i++) {
+                    for (int j = 0; j < winCombination.size(); j++) {
+                        if (winCombination.get(i).equals(clientCombination.get(i))) {
+                            //IMPRIMIR COINCIDEN EN POSICION
+                            respuesta += "X";
+                            break;
+                        } else if (winCombination.get(i).equals(clientCombination.get(j))) {
+                            //IMPRIMIR ▒
+                            respuesta += "0";
+                            break;
+                        }
+                    }
+                }
+                //ENVIAR RESPUESTA
+                flujo_salida.writeUTF(respuesta);
+                System.out.println("\tRespuesta enviada al cliente " + sCliente.getInetAddress() + ": " + respuesta);//CAMBIAR CODIGO DEL CLIENTE
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     public static void stringToArraylist(String combination) {
-        for (int i = 0; i < winCombination.size(); i++) {
-            clientCombination.add((int) combination.charAt(i));
+        for (int i = 0; i < combination.length(); i++) {
+            int n = Integer.parseInt(String.valueOf(combination.charAt(i)));
+            clientCombination.add(n);
         }
     }
 }//Fin de ServidorUDP2
