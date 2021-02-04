@@ -1,97 +1,92 @@
 package Ejercicio4;
 
-import Ejercicio2.Frase;
-import Ejercicio2.Respuesta;
-
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.*;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
 
 public class Receptor extends Thread {
-    static final int PORT_NUM = 9876;
-    static final int NUM_VIDAS = 10;
-    Socket sCliente;
+    Socket cSocket;
 
-    static Random randomGenerator = new Random();
+    static ArrayList<Integer> winCombinationArraylist = new ArrayList<Integer>();
+    static ArrayList<Integer> clientCombinationArraylist = new ArrayList<Integer>();
 
-    static ArrayList<Integer> winCombination = new ArrayList<Integer>();
-    static ArrayList<Integer> clientCombination = new ArrayList<Integer>();
+    static String clientCombinationString;
+    static String responseBuilder;
 
-    static String combinacionCliente;
-    static String respuesta;
-
-    public Receptor(Socket sCliente) {
-        this.sCliente = sCliente;
+    public Receptor(Socket cSocket) {
+        this.cSocket = cSocket;
     }
 
     public static void main(String args[]) throws Exception {
         //GENERAR NUMERO RANDOM SIN REPETIR
-        while (winCombination.size() < 4) {
-            int random = randomGenerator.nextInt(10);
-            if (!winCombination.contains(random)) {
-                winCombination.add(random);
+        while (winCombinationArraylist.size() < 4) {
+            int random = Utils.randomGenerator.nextInt(10);
+            if (!winCombinationArraylist.contains(random)) {
+                winCombinationArraylist.add(random);
                 System.out.print(random);
             }
         }
         //SE INICIA EL SERVIDOR
-        ServerSocket skServidor = new ServerSocket(PORT_NUM);
+        ServerSocket serverSocket = new ServerSocket(Utils.PORT_NUM);
 
         while (true) {
             //ESPERAMOS A LA CONEXION DEL CLIENTE
-            Socket socketCliente = skServidor.accept();
+            Socket clientSocket = serverSocket.accept();
             System.out.println();
-            System.out.println("Cliente conectado [IP: " + socketCliente.getInetAddress() + ", PUERTO " + PORT_NUM + "]");
+            System.out.println("Cliente conectado [IP: " + clientSocket.getInetAddress() + ", PUERTO " + Utils.PORT_NUM + "]");
             //SE INICIA EL HILO
-            new Receptor(socketCliente).start();
+            new Receptor(clientSocket).start();
         }
     }//Fin de main
 
-    @Override
     public void run() {
         try {
             //SE INICIAN LOS FLUJOS DE E/S
-            DataInputStream flujo_entrada = new DataInputStream(sCliente.getInputStream());
-            DataOutputStream flujo_salida = new DataOutputStream(sCliente.getOutputStream());
-
+            DataInputStream inputData = new DataInputStream(cSocket.getInputStream());
+            DataOutputStream outputData = new DataOutputStream(cSocket.getOutputStream());
+            //INICIALIZAR LA RESPUESTA
+            Respuesta res = new Respuesta(Utils.NUM_VIDAS, null);
             //AÑADIR AL ARRAYLIST DEL CLIENTE
-            while(true){
+            while (true) {
                 System.out.print("Esperando combinación del cliente: ");
-                combinacionCliente = flujo_entrada.readUTF();
-                System.out.println(combinacionCliente);
-                stringToArraylist(combinacionCliente);
+                clientCombinationString = inputData.readUTF();
+                System.out.println(clientCombinationString);
+
+                Utils.stringToArraylist(clientCombinationString, clientCombinationArraylist);
+                Utils.arrayListToString(winCombinationArraylist);
 
                 //COMPROBAR
-                respuesta = "";
-                for (int i = 0; i < winCombination.size(); i++) {
-                    for (int j = 0; j < winCombination.size(); j++) {
-                        if (winCombination.get(i).equals(clientCombination.get(i))) {
+                responseBuilder = "";
+                for (int i = 0; i < winCombinationArraylist.size(); i++) {
+                    for (int j = 0; j < winCombinationArraylist.size(); j++) {
+                        if (clientCombinationString.equals(Utils.arrayListToString(winCombinationArraylist))) {
+                            //SI GANAS
+                            responseBuilder = "Enhorabuena, has ganado";
+                        } else if (winCombinationArraylist.get(i).equals(clientCombinationArraylist.get(i))) {
                             //IMPRIMIR COINCIDEN EN POSICION
-                            respuesta += "X";
+                            responseBuilder += "X";
                             break;
-                        } else if (winCombination.get(i).equals(clientCombination.get(j))) {
+                        } else if (winCombinationArraylist.get(i).equals(clientCombinationArraylist.get(j))) {
                             //IMPRIMIR ▒
-                            respuesta += "0";
+                            responseBuilder += "0";
                             break;
                         }
                     }
                 }
+                //CARGAR EL OBJETO RESPUESTA
+                res.setRespuesta(responseBuilder);
+                res.setnVidas(res.getnVidas() - 1);
+                if (res.getnVidas() < 1) {
+                    res.setRespuesta("Has perdido todos los intentos.");
+                }
                 //ENVIAR RESPUESTA
-                flujo_salida.writeUTF(respuesta);
-                System.out.println("\tRespuesta enviada al cliente " + sCliente.getInetAddress() + ": " + respuesta);//CAMBIAR CODIGO DEL CLIENTE
+                outputData.writeUTF(res.getRespuesta() + " [NºVIDAS: " + res.getnVidas() + "]");
+                System.out.println("\tRespuesta enviada al cliente " + cSocket.getInetAddress() + ": " + res.getRespuesta() + " [NºVIDAS: " + res.getnVidas() + "]");//CAMBIAR CODIGO DEL CLIENTE
             }
         } catch (IOException e) {
             e.printStackTrace();
-        }
-    }
-
-    public static void stringToArraylist(String combination) {
-        for (int i = 0; i < combination.length(); i++) {
-            int n = Integer.parseInt(String.valueOf(combination.charAt(i)));
-            clientCombination.add(n);
         }
     }
 }//Fin de ServidorUDP2
