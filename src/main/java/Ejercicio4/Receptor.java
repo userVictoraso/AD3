@@ -8,12 +8,13 @@ import java.util.ArrayList;
 
 public class Receptor extends Thread {
     Socket cSocket;
-
+    static Socket clientSocket;
     static ArrayList<Integer> winCombinationArraylist = new ArrayList<Integer>();
     static ArrayList<Integer> clientCombinationArraylist = new ArrayList<Integer>();
 
     static String clientCombinationString;
     static String responseBuilder;
+    static Respuesta res;
 
     public Receptor(Socket cSocket) {
         this.cSocket = cSocket;
@@ -21,6 +22,7 @@ public class Receptor extends Thread {
 
     public static void main(String args[]) throws Exception {
         //GENERAR NUMERO RANDOM SIN REPETIR
+        System.out.println("Combinación ganadora: ");
         while (winCombinationArraylist.size() < 4) {
             int random = Utils.randomGenerator.nextInt(10);
             if (!winCombinationArraylist.contains(random)) {
@@ -33,7 +35,7 @@ public class Receptor extends Thread {
 
         while (true) {
             //ESPERAMOS A LA CONEXION DEL CLIENTE
-            Socket clientSocket = serverSocket.accept();
+            clientSocket = serverSocket.accept();
             System.out.println();
             System.out.println("Cliente conectado [IP: " + clientSocket.getInetAddress() + ", PUERTO " + Utils.PORT_NUM + "]");
             //SE INICIA EL HILO
@@ -47,7 +49,7 @@ public class Receptor extends Thread {
             DataInputStream inputData = new DataInputStream(cSocket.getInputStream());
             DataOutputStream outputData = new DataOutputStream(cSocket.getOutputStream());
             //INICIALIZAR LA RESPUESTA
-            Respuesta res = new Respuesta(Utils.NUM_VIDAS, null);
+            res = new Respuesta(Utils.NUM_VIDAS, null);
             //AÑADIR AL ARRAYLIST DEL CLIENTE
             while (true) {
                 System.out.print("Esperando combinación del cliente: ");
@@ -63,7 +65,7 @@ public class Receptor extends Thread {
                     for (int j = 0; j < winCombinationArraylist.size(); j++) {
                         if (clientCombinationString.equals(Utils.arrayListToString(winCombinationArraylist))) {
                             //SI GANAS
-                            responseBuilder = "Enhorabuena, has ganado";
+                            responseBuilder = Utils.winMessage;
                         } else if (winCombinationArraylist.get(i).equals(clientCombinationArraylist.get(i))) {
                             //IMPRIMIR COINCIDEN EN POSICION
                             responseBuilder += "X";
@@ -80,10 +82,17 @@ public class Receptor extends Thread {
                 res.setnVidas(res.getnVidas() - 1);
                 if (res.getnVidas() < 1) {
                     res.setRespuesta("Has perdido todos los intentos.");
+                    clientSocket.close();
+                    return;
                 }
                 //ENVIAR RESPUESTA
-                outputData.writeUTF(res.getRespuesta() + " [NºVIDAS: " + res.getnVidas() + "]");
+                outputData.writeUTF(res.getRespuesta());
                 System.out.println("\tRespuesta enviada al cliente " + cSocket.getInetAddress() + ": " + res.getRespuesta() + " [NºVIDAS: " + res.getnVidas() + "]");//CAMBIAR CODIGO DEL CLIENTE
+
+                if (res.getRespuesta().equals(Utils.winMessage)) {
+                    clientSocket.close();
+                    System.exit(1);
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();

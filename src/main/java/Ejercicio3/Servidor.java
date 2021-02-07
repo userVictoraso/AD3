@@ -10,9 +10,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Servidor {
-    static List<Frase> frases = new ArrayList<>();
-    static Respuesta respuesta = new Respuesta(true, null);
-
     static DatagramPacket paqRecibido = null;
     static DatagramPacket paqEnviado = null;
 
@@ -26,7 +23,6 @@ public class Servidor {
 
         while (true) {
             System.out.println("Esperando datagrama.....");
-
             //RECIBO DATAGRAMA
             paqRecibido = new DatagramPacket(recibidos, recibidos.length);
             serverSocket.receive(paqRecibido);
@@ -47,11 +43,8 @@ public class Servidor {
 
             //Para terminar
             if (fraseRecibida.trim().equals("*")) break;
-
         }//Fin de while
-
         serverSocket.close();
         System.out.println("Socket cerrado...");
-
     }//Fin de main
 }//Fin de ServidorUDP2

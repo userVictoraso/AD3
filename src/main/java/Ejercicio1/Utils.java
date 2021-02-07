@@ -8,8 +8,8 @@ public class Utils {
 
     //CONSTANTES
     final static String HOST = "localhost";
-    final static int PUERTO = 2000;
-    final static String pregunta = "¿Que le quieres decir al servidor?";
+    final static int PORT = 2000;
+    final static String question = "¿Que le quieres decir al servidor?";
 
     //UTILIDADES
     static Scanner scan = new Scanner(System.in);
@@ -17,7 +17,7 @@ public class Utils {
     static DataInputStream dis = null;
 
 
-    public static int numeroCaracteres(String string){
+    public static int countCharacter(String string){
         int numero = 0;
         for(int i = 0; i < string.length(); i++){
             if(string.charAt(i) != ' '){

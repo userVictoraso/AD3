@@ -7,9 +7,7 @@ import java.util.Scanner;
 public class Cliente extends Thread {
 
     static DatagramPacket envio = null;
-    static DatagramPacket envioDos = null;
     static Scanner scanner = new Scanner(System.in);
-    static String nuevaFrase = "";
     static int puerto = 4444; // puerto por el que escucha
 
     public static void main(String[] args) {
@@ -24,10 +22,8 @@ public class Cliente extends Thread {
             DatagramSocket clientSocket = new DatagramSocket(6777);//socket cliente
             byte[] enviados;
             byte[] recibidos = new byte[1024];
-
             // DATOS DEL SERVIDOR
             InetAddress IPServidor = InetAddress.getLocalHost();// localhost
-
             while (true) {
                 // INTRODUCIR DATOS POR TECLADO
                 System.out.println("Escribe tu frase: ");
@@ -35,7 +31,6 @@ public class Cliente extends Thread {
                 enviados = cadena.getBytes();
 
                 if (cadena.trim().equals("*")) break;
-
                 // ENVIANDO DATAGRAMA AL SERVIDOR
                 System.out.println("\tEnviando frase al servidor.");
                 envio = new DatagramPacket(enviados, enviados.length, IPServidor, puerto);
@@ -45,7 +40,7 @@ public class Cliente extends Thread {
                 DatagramPacket recibo = new DatagramPacket(recibidos, recibidos.length);
                 clientSocket.receive(recibo);
                 String respuesta = new String(recibo.getData(), recibo.getOffset(), recibo.getLength());
-                System.out.println(respuesta);
+                System.out.println("Frase recibida: " + respuesta);
             }
             clientSocket.close();
         } catch (SocketException | UnknownHostException se) {

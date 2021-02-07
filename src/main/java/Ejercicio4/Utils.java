@@ -9,6 +9,8 @@ public class Utils {
     static final int PORT_NUM = 9876;
     static final int NUM_VIDAS = 10;
 
+    static final String winMessage = "Enhorabuena, has ganado";
+
     static Pattern pattern = Pattern.compile("(\\d{4})");
     static Random randomGenerator = new Random();
     static Scanner scanner = new Scanner(System.in);
